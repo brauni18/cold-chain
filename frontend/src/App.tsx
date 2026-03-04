@@ -6,9 +6,9 @@ import { Navbar } from './components/Navbar.js';
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-navy-950">
         <Navbar />
-        <main className="container mx-auto px-4 py-8">
+        <main className="max-w-7xl mx-auto px-6 py-8">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="*" element={<NotFoundPage />} />
