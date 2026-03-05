@@ -51,51 +51,51 @@ const cards = [
     label: 'Total Units',
     key: 'total' as const,
     icon: TotalIcon,
-    iconColor: 'text-cyan-400',
-    tileBg: 'bg-cyan-400/10',
-    textColor: 'text-cyan-400',
-    borderColor: 'border-cyan-400/20',
-    glowClass: 'text-glow-cyan',
+    iconColor: 'text-cyan-600 dark:text-cyan-400',
+    tileBg: 'bg-cyan-50 dark:bg-cyan-400/10',
+    textColor: 'text-cyan-600 dark:text-cyan-400',
+    borderColor: 'border-cyan-200 dark:border-cyan-400/20',
+    glowClass: 'dark:text-glow-cyan',
   },
   {
     label: 'Online',
     key: 'online' as const,
     icon: OnlineIcon,
-    iconColor: 'text-emerald-400',
-    tileBg: 'bg-emerald-400/10',
-    textColor: 'text-emerald-400',
-    borderColor: 'border-emerald-400/20',
-    glowClass: 'text-glow-green',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    tileBg: 'bg-emerald-50 dark:bg-emerald-400/10',
+    textColor: 'text-emerald-600 dark:text-emerald-400',
+    borderColor: 'border-emerald-200 dark:border-emerald-400/20',
+    glowClass: 'dark:text-glow-green',
   },
   {
     label: 'Normal',
     key: 'normal' as const,
     icon: NormalIcon,
-    iconColor: 'text-emerald-400',
-    tileBg: 'bg-emerald-400/10',
-    textColor: 'text-emerald-400',
-    borderColor: 'border-emerald-400/20',
-    glowClass: 'text-glow-green',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    tileBg: 'bg-emerald-50 dark:bg-emerald-400/10',
+    textColor: 'text-emerald-600 dark:text-emerald-400',
+    borderColor: 'border-emerald-200 dark:border-emerald-400/20',
+    glowClass: 'dark:text-glow-green',
   },
   {
     label: 'Warning',
     key: 'warning' as const,
     icon: WarningIcon,
-    iconColor: 'text-amber-400',
-    tileBg: 'bg-amber-400/10',
-    textColor: 'text-amber-400',
-    borderColor: 'border-amber-400/20',
-    glowClass: 'text-glow-yellow',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    tileBg: 'bg-amber-50 dark:bg-amber-400/10',
+    textColor: 'text-amber-600 dark:text-amber-400',
+    borderColor: 'border-amber-200 dark:border-amber-400/20',
+    glowClass: 'dark:text-glow-yellow',
   },
   {
     label: 'Critical',
     key: 'critical' as const,
     icon: CriticalIcon,
-    iconColor: 'text-red-400',
-    tileBg: 'bg-red-400/10',
-    textColor: 'text-red-400',
-    borderColor: 'border-red-400/20',
-    glowClass: 'text-glow-red',
+    iconColor: 'text-red-600 dark:text-red-400',
+    tileBg: 'bg-red-50 dark:bg-red-400/10',
+    textColor: 'text-red-600 dark:text-red-400',
+    borderColor: 'border-red-200 dark:border-red-400/20',
+    glowClass: 'dark:text-glow-red',
   },
 ];
 
@@ -110,18 +110,18 @@ export function StatusBar({ total, online, normal, warning, critical }: StatusBa
           <div
             key={card.key}
             className={`
-              flex items-center gap-3 bg-card-gradient rounded-xl p-3.5
-              border ${card.borderColor} shadow-card
+              flex items-center gap-3 bg-card-gradient-light dark:bg-card-gradient rounded-xl p-3.5
+              border ${card.borderColor} shadow-card-light dark:shadow-card
               transition-all duration-300 hover:shadow-lg
             `}
           >
-            {/* Icon tile — recessed */}
+            {/* Icon tile */}
             <div
               className={`
                 w-10 h-10 rounded-lg flex-shrink-0
                 flex items-center justify-center
                 ${card.tileBg} ${card.iconColor}
-                shadow-tile-inset
+                shadow-tile-inset-light dark:shadow-tile-inset
               `}
             >
               <Icon />
@@ -129,7 +129,7 @@ export function StatusBar({ total, online, normal, warning, critical }: StatusBa
 
             {/* Text */}
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest font-medium truncate">
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-medium truncate">
                 {card.label}
               </p>
               <p className={`text-xl font-bold mt-0.5 ${card.textColor} ${card.glowClass} tabular-nums leading-tight`}>

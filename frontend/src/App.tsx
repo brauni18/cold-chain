@@ -6,7 +6,7 @@ import { Navbar } from './components/Navbar.js';
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-navy-950">
+      <div className="min-h-screen bg-slate-100 dark:bg-navy-950 transition-colors duration-300">
         <Navbar />
         <main className="max-w-7xl mx-auto px-6 py-8">
           <Routes>

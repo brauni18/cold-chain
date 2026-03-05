@@ -16,9 +16,8 @@ app.use(express.json());
 
 // Routes
 try{
-  console.log('Hit routes - Setting up routes...');
+  console.log('Hit index - Setting up routes...');
   app.use('/api/temperature', temperatureRoutes);
-
 }
 catch(error){
   console.error('Error setting up routes:', error);

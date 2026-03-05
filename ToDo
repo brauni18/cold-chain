@@ -1,0 +1,23 @@
+user interface tasks:
+1.adding new units
+
+2.card controll -
+  edit
+  delete 
+
+3.card popup -
+     pressing on the card -opens a popup window of the Unit (same info as the card)bigger graph with diffrent options to see the data up to 30-day history 
+     option to export the history to a pdf/shere
+
+4.user controll -
+    login/out
+    settings of the app 
+
+5.status bar -
+    change them to be buttons to filter the cards 
+
+
+backend:
+understanig how to auto update the cards commponnets to be "live" to request updates from the cloud automaticaly
+     
+    
