@@ -1,4 +1,4 @@
-# Full-Stack Template
+# Full-Stack 
 
 A clean and modern full-stack application template with **React + TypeScript** frontend and **Node.js + Express + MongoDB** backend.
 
