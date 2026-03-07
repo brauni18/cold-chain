@@ -18,6 +18,11 @@ user interface tasks:
 
 
 backend:
+entitys - creating entitys for :
+    a.sensors - each sensor can be in one frige
+    b.friges - a frige can have multipul sensors  
+    c.users - each user can have multipul friges
+
 understanig how to auto update the cards commponnets to be "live" to request updates from the cloud automaticaly
      
     
