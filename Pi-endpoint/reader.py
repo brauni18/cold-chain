@@ -107,7 +107,7 @@ def send_to_dynamodb(sensor_id, temp_data):
     try:
         now = datetime.now(timezone.utc)
         item = {
-            'sensor_id': sensor_id,
+            'sensorId': sensor_id,          # changed from 'sensor_id'
             'timestamp': now.isoformat(),
             'celsius': Decimal(str(temp_data['C'])),
             'fahrenheit': Decimal(str(temp_data['F'])),
@@ -115,10 +115,8 @@ def send_to_dynamodb(sensor_id, temp_data):
             'location': 'refrigerator',
             'ttl': int(now.timestamp()) + 7776000  # 90-day TTL
         }
-
         dynamo_table.put_item(Item=item)
         print(f"DynamoDB: Sent data for sensor {sensor_id}: {temp_data['C']:.2f}°C")
-
     except Exception as e:
         print(f"DynamoDB ERROR: Could not send data for {sensor_id}. {e}")
 
