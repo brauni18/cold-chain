@@ -2,11 +2,14 @@ import time
 import os
 import glob
 import json
+import boto3
+from decimal import Decimal
+from datetime import datetime, timezone
 import influxdb_client
 from influxdb_client import Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 
-#-- cloud config --
+# -- cloud config --
 token = "INUsA-pnf0CbGCgLlyRokVQVvfJ9z33meMlK2SmOrLLVNS10L4S7kLitcbLIpnX9wtFLybDb1iPNb0ewBjlXHQ=="
 org = "CoolMonitor org"
 url = "https://eu-central-1-1.aws.cloud2.influxdata.com"
@@ -14,6 +17,13 @@ bucket = "refrigerator-sensor-bucket"
 
 cloud_client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)
 write_api = cloud_client.write_api(write_options=SYNCHRONOUS)
+
+# -- DynamoDB config --
+DYNAMO_TABLE_NAME = "cold-chain-sensors"
+DYNAMO_REGION = "eu-north-1"
+
+dynamodb = boto3.resource('dynamodb', region_name=DYNAMO_REGION)
+dynamo_table = dynamodb.Table(DYNAMO_TABLE_NAME)
 
 base_dir = '/sys/bus/w1/devices/'
 sensor_prefix = '28-'
@@ -90,8 +100,30 @@ def send_to_influx(sensor_id, temp_data):
     except Exception as e:
         print(f"InfluxDB ERROR: Could not send data for {sensor_id}. {e}")
 
+def send_to_dynamodb(sensor_id, temp_data):
+    """
+    Sends temperature data to DynamoDB
+    """
+    try:
+        now = datetime.now(timezone.utc)
+        item = {
+            'sensor_id': sensor_id,
+            'timestamp': now.isoformat(),
+            'celsius': Decimal(str(temp_data['C'])),
+            'fahrenheit': Decimal(str(temp_data['F'])),
+            'status': temp_data['Status'],
+            'location': 'refrigerator',
+            'ttl': int(now.timestamp()) + 7776000  # 90-day TTL
+        }
+
+        dynamo_table.put_item(Item=item)
+        print(f"DynamoDB: Sent data for sensor {sensor_id}: {temp_data['C']:.2f}°C")
+
+    except Exception as e:
+        print(f"DynamoDB ERROR: Could not send data for {sensor_id}. {e}")
+
 if __name__ == '__main__':
-    print("Starting temperature monitoring and InfluxDB cloud storage...")
+    print("Starting temperature monitoring and InfluxDB + DynamoDB cloud storage...")
     
     while True:
         current_readings = get_temp()
@@ -102,6 +134,8 @@ if __name__ == '__main__':
                 if data['Status'] == 'OK':
                     # Send the valid data to InfluxDB
                     send_to_influx(sensor_id, data)
+                    # Send the valid data to DynamoDB
+                    send_to_dynamodb(sensor_id, data)
                 else:
                     print(f"Sensor {sensor_id} skipped due to {data['Status']} error.")
         else:
