@@ -2,8 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import 'dotenv/config';
-import { temperatureRoutes } from './routes/temperatureRoutes';
-import { errorHandler, notFound } from './utils';
+import { temperatureRoutes } from './routes/temperatureRoutes.js';
+import { sensorRoutes } from './routes/sensorRoutes.js';
+import { fridgeRoutes } from './routes/fridgeRoutes.js';
+import { userRoutes } from './routes/userRoutes.js';
+import { errorHandler, notFound } from './utils.js';
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -15,22 +18,16 @@ app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 app.use(express.json());
 
 // Routes
-try{
-  console.log('Hit index - Setting up routes...');
-  app.use('/api/temperature', temperatureRoutes);
-}
-catch(error){
-  console.error('Error setting up routes:', error);
-}
-
+app.use('/api/temperature', temperatureRoutes);
+app.use('/api/sensors', sensorRoutes);
+app.use('/api/fridges', fridgeRoutes);
+app.use('/api/users', userRoutes);
 
 // Error handling
 app.use(notFound);
 app.use(errorHandler);
 
-// Database & start
+// Start
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
-
 
 export default app;
