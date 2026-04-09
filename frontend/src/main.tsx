@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { store } from './store/store.js';
 import { ThemeProvider } from './context/ThemeContext.js';
+import './config/amplify.js';
 import App from './App.js';
 import './index.css';
 

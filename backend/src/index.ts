@@ -6,6 +6,7 @@ import { temperatureRoutes } from './routes/temperatureRoutes.js';
 import { sensorRoutes } from './routes/sensorRoutes.js';
 import { fridgeRoutes } from './routes/fridgeRoutes.js';
 import { userRoutes } from './routes/userRoutes.js';
+import { requireAuth } from './middleware/auth.js';
 import { errorHandler, notFound } from './utils.js';
 
 const app = express();
@@ -16,6 +17,9 @@ const FRONTEND_URL = process.env.FRONTEND_URL ?? 'http://localhost:5173';
 app.use(helmet());
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 app.use(express.json());
+
+// Auth middleware — protect all API routes
+app.use('/api', requireAuth);
 
 // Routes
 app.use('/api/temperature', temperatureRoutes);
@@ -31,3 +35,4 @@ app.use(errorHandler);
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 export default app;
+

@@ -13,14 +13,15 @@ import type { ApiResponse, UserEntity } from '../types/index.js';
 
 export const createUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, name } = req.body;
+    const { email, name, cognitoSub } = req.body;
 
     if (!email || !name) {
       res.status(400).json({ success: false, message: 'email and name are required' });
       return;
     }
 
-    const userId = randomUUID();
+    // Use Cognito sub as the user ID if provided, otherwise generate one
+    const userId = cognitoSub ?? randomUUID();
     const now = new Date().toISOString();
 
     const item = {

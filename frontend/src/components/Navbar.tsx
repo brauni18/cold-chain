@@ -1,11 +1,14 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext.js';
+import { useAuth } from '../context/AuthContext.js';
 
 export function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const isDark = theme === 'dark';
 
   // Close dropdown when clicking outside
@@ -18,6 +21,11 @@ export function Navbar() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <nav className="bg-white dark:bg-card-gradient border-b border-gray-200 dark:border-navy-700/40 backdrop-blur-sm sticky top-0 z-50 transition-colors">
@@ -76,8 +84,8 @@ export function Navbar() {
               <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-navy-800 border border-gray-200 dark:border-navy-700/50 rounded-lg shadow-lg dark:shadow-card overflow-hidden">
                 {/* User info */}
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-navy-700/40">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Admin User</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">admin@coldchain.com</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name ?? 'User'}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{user?.email}</p>
                 </div>
 
                 {/* Menu items */}
@@ -116,7 +124,10 @@ export function Navbar() {
 
                 {/* Logout */}
                 <div className="border-t border-gray-100 dark:border-navy-700/40">
-                  <button className="w-full px-4 py-2 flex items-center gap-3 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2 flex items-center gap-3 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                  >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
                     </svg>
