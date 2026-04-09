@@ -1,96 +1,156 @@
 import { Request, Response } from 'express';
-import { InfluxDB } from '@influxdata/influxdb-client';
+import {
+  queryReadings,
+  discoverSensorIds,
+  putItem,
+  deleteItem,
+  READINGS_TABLE,
+} from '../db/dynamodb.js';
+import {
+  queryByPartition,
+  ENTITIES_TABLE,
+} from '../db/dynamodb.js';
+import type { LatestSensorResponse, HistoryPointResponse } from '../types/index.js';
 
-const token = process.env.INFLUXDB_TOKEN as string;
-const org = process.env.INFLUXDB_ORG as string;
-const bucket = process.env.INFLUXDB_BUCKET as string;
-const url = process.env.INFLUXDB_URL as string;
+// ── GET /api/temperature/latest ────────────────────────
 
 export const getLatestTemperature = async (_req: Request, res: Response): Promise<void> => {
   console.log('→ getLatestTemperature called');
 
-  const fluxQuery = `
-    from(bucket: "${bucket}")
-    |> range(start: -7d)
-    |> filter(fn: (r) => r._field == "celsius")
-    |> group(columns: ["sensor_id", "location"])
-    |> last()
-  `;
-
-  const sensors: { sensorId: string; location: string; temp: number; time: string; unit: string }[] = [];
-  let hasError = false;
-
   try {
-    const queryApi = new InfluxDB({ url, token }).getQueryApi(org);
+    // 1. Find all known sensor IDs (scan while small; later use entities table)
+    const sensorIds = await discoverSensorIds();
 
-    await queryApi.queryRows(fluxQuery, {
-      next(row, tableMeta) {
-        const r = tableMeta.toObject(row);
+    // 2. For each sensor, grab the single most-recent reading
+    const sensors: LatestSensorResponse[] = [];
+
+    await Promise.all(
+      sensorIds.map(async (sensorId) => {
+        const items = await queryReadings(sensorId, { limit: 1 }); // newest first
+        if (items.length === 0) return;
+        const r = items[0];
+
+        console.log('🔍 Raw DynamoDB item:', JSON.stringify(r));
+
+        // Try to get a friendly location from the entities table
+        let location = sensorId; // fallback
+        try {
+          const entityItems = await queryByPartition(
+            ENTITIES_TABLE, 'PK', `SENSOR#${sensorId}`, 'SK', 'PROFILE',
+          );
+          if (entityItems.length > 0 && entityItems[0].location) {
+            location = entityItems[0].location as string;
+          }
+        } catch {
+          // entities table may not exist yet — graceful fallback
+        }
+
         sensors.push({
-          sensorId: r.sensor_id as string,
-          location: r.location as string,
-          temp: r._value as number,
-          time: r._time as string,
+          sensorId,
+          location: (r.location as string) ?? location,  // use reading's location, fallback to entity
+          temp: Number(r.celsius ?? r.value),             // support both field names
+          time: r.timestamp as string,
           unit: 'Celsius',
         });
-      },
-      error(e) {
-        hasError = true;
-        console.error('❌ InfluxDB Error:', e.message);
-        if (!res.headersSent) res.status(500).json({ error: e.message });
-      },
-      complete() {
-        if (!hasError && !res.headersSent) {
-          console.log(`✅ Sending ${sensors.length} sensor readings`);
-          res.json(sensors);
-        }
-      },
-    });
+      }),
+    );
+
+    console.log(`✅ Sending ${sensors.length} sensor readings`);
+    res.json(sensors);
   } catch (error) {
     console.error('Server Error:', error);
-    if (!res.headersSent) res.status(500).send('Server Error');
+    if (!res.headersSent) res.status(500).json({ error: 'Failed to fetch latest temperatures' });
   }
 };
 
-export const getTemperatureHistory = async (_req: Request, res: Response): Promise<void> => {
+// ── GET /api/temperature/history ───────────────────────
+
+export const getTemperatureHistory = async (req: Request, res: Response): Promise<void> => {
   console.log('→ getTemperatureHistory called');
 
-  const fluxQuery = `
-    from(bucket: "${bucket}")
-    |> range(start: -30d)
-    |> filter(fn: (r) => r._field == "celsius")
-    |> sort(columns: ["_time"], desc: false)
-  `;
-
-  const data: { sensorId: string; time: string; temp: number }[] = [];
-  let hasError = false;
-
   try {
-    const queryApi = new InfluxDB({ url, token }).getQueryApi(org);
+    const days = Number(req.query.days) || 30;
+    const from = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-    await queryApi.queryRows(fluxQuery, {
-      next(row, tableMeta) {
-        const r = tableMeta.toObject(row);
-        data.push({
-          sensorId: r.sensor_id as string,
-          time: r._time as string,
-          temp: r._value as number,
-        });
-      },
-      error(e) {
-        hasError = true;
-        console.error('❌ InfluxDB Error:', e.message);
-        if (!res.headersSent) res.status(500).json({ error: e.message });
-      },
-      complete() {
-        if (!hasError && !res.headersSent) {
-          console.log(`✅ Sending ${data.length} history points`);
-          res.json(data);
+    // Optionally filter to a single sensor
+    const requestedSensor = req.query.sensorId as string | undefined;
+    const sensorIds = requestedSensor ? [requestedSensor] : await discoverSensorIds();
+
+    const data: HistoryPointResponse[] = [];
+
+    await Promise.all(
+      sensorIds.map(async (sensorId) => {
+        const items = await queryReadings(sensorId, { from, ascending: true });
+        for (const r of items) {
+          data.push({
+            sensorId,
+            time: r.timestamp as string,
+            temp: Number(r.celsius ?? r.value),           // same fix
+          });
         }
-      },
-    });
+      }),
+    );
+
+    // Sort ascending by time (across all sensors)
+    data.sort((a, b) => a.time.localeCompare(b.time));
+
+    console.log(`✅ Sending ${data.length} history points`);
+    res.json(data);
   } catch (error) {
     console.error('Server Error:', error);
-    if (!res.headersSent) res.status(500).send('Server Error');
+    if (!res.headersSent) res.status(500).json({ error: 'Failed to fetch temperature history' });
+  }
+};
+
+// ── POST /api/temperature ──────────────────────────────
+
+export const createReading = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { sensorId, value, fahrenheit, tenantId, status } = req.body;
+
+    if (!sensorId || value === undefined) {
+      res.status(400).json({ success: false, message: 'sensorId and value are required' });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const ttl = Math.floor(Date.now() / 1000) + 7776000; // 90 days
+
+    const item = {
+      sensorId,
+      timestamp: now,
+      tenantId: tenantId ?? 'api',
+      sensorType: 'temperature',
+      measure: 'celsius',
+      value: Number(value),
+      fahrenheit: fahrenheit != null ? Number(fahrenheit) : Number(value) * 9 / 5 + 32,
+      status: status ?? 'OK',
+      ttl,
+    };
+
+    await putItem(READINGS_TABLE, item);
+    res.status(201).json({ success: true, data: item });
+  } catch (error) {
+    console.error('Server Error:', error);
+    if (!res.headersSent) res.status(500).json({ success: false, message: 'Failed to create reading' });
+  }
+};
+
+// ── DELETE /api/temperature/:sensorId/:timestamp ───────
+
+export const deleteReading = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { sensorId, timestamp } = req.params;
+
+    if (!sensorId || !timestamp) {
+      res.status(400).json({ success: false, message: 'sensorId and timestamp are required' });
+      return;
+    }
+
+    await deleteItem(READINGS_TABLE, { sensorId, timestamp });
+    res.json({ success: true, message: 'Reading deleted' });
+  } catch (error) {
+    console.error('Server Error:', error);
+    if (!res.headersSent) res.status(500).json({ success: false, message: 'Failed to delete reading' });
   }
 };

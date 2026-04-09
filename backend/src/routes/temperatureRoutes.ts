@@ -1,12 +1,19 @@
 import { Router } from 'express';
-import { getLatestTemperature, getTemperatureHistory } from '../controllers/temperatureController';
+import {
+  getLatestTemperature,
+  getTemperatureHistory,
+  createReading,
+  deleteReading,
+} from '../controllers/temperatureController.js';
 
 export const temperatureRoutes = Router();
-try{
-    console.log('hit routes - Setting up temperature controller...');
-    temperatureRoutes.get('/latest', getLatestTemperature);
-    temperatureRoutes.get('/history', getTemperatureHistory);
-    
-}catch(error){
-    console.error('Error setting up temperature controller:', error);
+
+try {
+  console.log('Setting up temperature routes...');
+  temperatureRoutes.get('/latest', getLatestTemperature);
+  temperatureRoutes.get('/history', getTemperatureHistory);
+  temperatureRoutes.post('/', createReading);
+  temperatureRoutes.delete('/:sensorId/:timestamp', deleteReading);
+} catch (error) {
+  console.error('Error setting up temperature routes:', error);
 }

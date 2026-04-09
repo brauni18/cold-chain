@@ -96,7 +96,7 @@ export function SensorCard({ sensor, history }: SensorCardProps) {
           <div>
             <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Current</p>
             <p className="text-4xl font-bold text-cyan-600 dark:text-cyan-400 dark:text-glow-cyan tabular-nums leading-none">
-              {sensor.temp.toFixed(1)}<span className="text-lg text-cyan-600/70 dark:text-cyan-400/70 ml-0.5">°C</span>
+              {(sensor.temp ?? 0).toFixed(1)}<span className="text-lg text-cyan-600/70 dark:text-cyan-400/70 ml-0.5">°C</span>
             </p>
           </div>
           <div className="text-right space-y-0.5">

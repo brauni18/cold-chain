@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { SensorReading, SensorHistoryPoint } from '../types/index.js';
+import { authFetch } from '../utils/api.js';
 
 interface TemperatureState {
   sensors: SensorReading[];
@@ -20,13 +21,13 @@ const initialState: TemperatureState = {
 };
 
 export const fetchSensorData = createAsyncThunk('temperature/fetchSensors', async () => {
-  const res = await fetch('/api/temperature/latest');
+  const res = await authFetch('/api/temperature/latest');
   if (!res.ok) throw new Error('Failed to fetch sensor data');
   return (await res.json()) as SensorReading[];
 });
 
 export const fetchTemperatureHistory = createAsyncThunk('temperature/fetchHistory', async () => {
-  const res = await fetch('/api/temperature/history');
+  const res = await authFetch('/api/temperature/history');
   if (!res.ok) throw new Error('Failed to fetch history');
   return (await res.json()) as SensorHistoryPoint[];
 });
