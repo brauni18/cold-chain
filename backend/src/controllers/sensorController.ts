@@ -13,10 +13,10 @@ import type { ApiResponse, SensorEntity } from '../types/index.js';
 
 export const createSensor = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sensorId, fridgeId, name, location, minThreshold, maxThreshold } = req.body;
+    const { sensorId, deviceId, name, location, minThreshold, maxThreshold } = req.body;
 
-    if (!sensorId || !fridgeId) {
-      res.status(400).json({ success: false, message: 'sensorId and fridgeId are required' });
+    if (!sensorId || !deviceId) {
+      res.status(400).json({ success: false, message: 'sensorId and deviceId are required' });
       return;
     }
 
@@ -25,7 +25,7 @@ export const createSensor = async (req: Request, res: Response): Promise<void> =
       PK: `SENSOR#${sensorId}`,
       SK: 'PROFILE',
       sensorId,
-      fridgeId,
+      deviceId,
       name: name ?? sensorId,
       location: location ?? '',
       minThreshold: minThreshold ?? null,
@@ -36,9 +36,9 @@ export const createSensor = async (req: Request, res: Response): Promise<void> =
 
     await putItem(ENTITIES_TABLE, item);
 
-    // Also create the reverse mapping: FRIDGE#x → SENSOR#y
+    // Also create the reverse mapping: DEVICE#x → SENSOR#y
     await putItem(ENTITIES_TABLE, {
-      PK: `FRIDGE#${fridgeId}`,
+      PK: `DEVICE#${deviceId}`,
       SK: `SENSOR#${sensorId}`,
       sensorId,
       linkedAt: now,
@@ -46,7 +46,7 @@ export const createSensor = async (req: Request, res: Response): Promise<void> =
 
     const response: ApiResponse<SensorEntity> = {
       success: true,
-      data: { sensorId, fridgeId, name: item.name, location: item.location, minThreshold, maxThreshold, createdAt: now, updatedAt: now },
+      data: { sensorId, deviceId, name: item.name, location: item.location, minThreshold, maxThreshold, createdAt: now, updatedAt: now },
     };
     res.status(201).json(response);
   } catch (error) {
@@ -106,15 +106,15 @@ export const deleteSensor = async (req: Request, res: Response): Promise<void> =
   try {
     const { id } = req.params;
 
-    // Get the sensor to find its fridgeId for cleanup
+    // Get the sensor to find its deviceId for cleanup
     const item = await getItem(ENTITIES_TABLE, { PK: `SENSOR#${id}`, SK: 'PROFILE' });
 
     // Delete the sensor profile
     await deleteItem(ENTITIES_TABLE, { PK: `SENSOR#${id}`, SK: 'PROFILE' });
 
-    // Delete the fridge→sensor mapping if we know the fridgeId
-    if (item?.fridgeId) {
-      await deleteItem(ENTITIES_TABLE, { PK: `FRIDGE#${item.fridgeId}`, SK: `SENSOR#${id}` });
+    // Delete the device→sensor mapping if we know the deviceId
+    if (item?.deviceId) {
+      await deleteItem(ENTITIES_TABLE, { PK: `DEVICE#${item.deviceId}`, SK: `SENSOR#${id}` });
     }
 
     res.json({ success: true, message: 'Sensor deleted' });
@@ -128,7 +128,7 @@ export const deleteSensor = async (req: Request, res: Response): Promise<void> =
 
 export const listSensors = async (_req: Request, res: Response): Promise<void> => {
   try {
-    // For now, scan-based. In production, scope by user→fridge→sensors.
+    // For now, scan-based. In production, scope by user→device→sensors.
     const { ScanCommand } = await import('@aws-sdk/lib-dynamodb');
     const { docClient } = await import('../db/dynamodb.js');
 
@@ -145,12 +145,12 @@ export const listSensors = async (_req: Request, res: Response): Promise<void> =
   }
 };
 
-// ── GET /api/fridges/:fridgeId/sensors ─────────────────
+// ── GET /api/devices/:deviceId/sensors ─────────────────
 
-export const listSensorsForFridge = async (req: Request, res: Response): Promise<void> => {
+export const listSensorsForDevice = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { fridgeId } = req.params;
-    const items = await queryByPartition(ENTITIES_TABLE, 'PK', `FRIDGE#${fridgeId}`, 'SK', 'SENSOR#');
+    const { deviceId } = req.params;
+    const items = await queryByPartition(ENTITIES_TABLE, 'PK', `DEVICE#${deviceId}`, 'SK', 'SENSOR#');
 
     // Enrich with full sensor profiles
     const sensors = await Promise.all(
@@ -165,7 +165,7 @@ export const listSensorsForFridge = async (req: Request, res: Response): Promise
 
     res.json({ success: true, data: sensors });
   } catch (error) {
-    console.error('listSensorsForFridge error:', error);
-    res.status(500).json({ success: false, message: 'Failed to list sensors for fridge' });
+    console.error('listSensorsForDevice error:', error);
+    res.status(500).json({ success: false, message: 'Failed to list sensors for device' });
   }
 };

@@ -1,28 +1,25 @@
 user interface tasks:
-1.adding new units
-
-2.card controll -
+1.user authentication -  AWS cognito 
+    buliding login signup pages
+    
+2.user controll -
   edit
   delete 
+ adding units 
 
-3.card popup -
+3. real time updated - AWS IOT core 
+
+4.card development - edit/delete
      pressing on the card -opens a popup window of the Unit (same info as the card)bigger graph with diffrent options to see the data up to 30-day history 
      option to export the history to a pdf/shere
 
-4.user controll -
-    login/out
-    settings of the app 
+
 
 5.status bar -
     change them to be buttons to filter the cards 
 
 
-backend:
-entitys - creating entitys for :
-    a.sensors - each sensor can be in one frige
-    b.friges - a frige can have multipul sensors  
-    c.users - each user can have multipul friges
+6. lanch - AWS EC2  
 
-understanig how to auto update the cards commponnets to be "live" to request updates from the cloud automaticaly
      
     

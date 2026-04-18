@@ -96,7 +96,7 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
   try {
     const { id } = req.params;
     await deleteItem(ENTITIES_TABLE, { PK: `USER#${id}`, SK: 'PROFILE' });
-    // Note: does NOT cascade-delete fridges. Handle in a future cleanup job.
+    // Note: does NOT cascade-delete devices. Handle in a future cleanup job.
     res.json({ success: true, message: 'User deleted' });
   } catch (error) {
     console.error('deleteUser error:', error);

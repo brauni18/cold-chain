@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { SensorReading, SensorHistoryPoint } from '../types/index.js';
 import { authFetch } from '../utils/api.js';
 
@@ -32,6 +32,19 @@ export const fetchTemperatureHistory = createAsyncThunk('temperature/fetchHistor
   return (await res.json()) as SensorHistoryPoint[];
 });
 
+export const renameDevice = createAsyncThunk(
+  'temperature/renameDevice',
+  async ({ tenantId, name }: { tenantId: string; name: string }) => {
+    const res = await authFetch(`/api/devices/${tenantId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) throw new Error('Failed to rename device');
+    return { tenantId, name };
+  },
+);
+
 const temperatureSlice = createSlice({
   name: 'temperature',
   initialState,
@@ -47,7 +60,15 @@ const temperatureSlice = createSlice({
       .addCase(fetchSensorData.rejected, (state, action) => { state.loading = false; state.error = action.error.message ?? 'Error'; })
       .addCase(fetchTemperatureHistory.pending, (state) => { state.historyLoading = true; })
       .addCase(fetchTemperatureHistory.fulfilled, (state, action) => { state.historyLoading = false; state.history = action.payload; })
-      .addCase(fetchTemperatureHistory.rejected, (state) => { state.historyLoading = false; });
+      .addCase(fetchTemperatureHistory.rejected, (state) => { state.historyLoading = false; })
+      // Rename device — update deviceName on all sensors belonging to that tenant
+      .addCase(renameDevice.fulfilled, (state, action: PayloadAction<{ tenantId: string; name: string }>) => {
+        for (const sensor of state.sensors) {
+          if (sensor.tenantId === action.payload.tenantId) {
+            sensor.deviceName = action.payload.name;
+          }
+        }
+      });
   },
 });
 

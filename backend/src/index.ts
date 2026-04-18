@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import 'dotenv/config';
 import { temperatureRoutes } from './routes/temperatureRoutes.js';
 import { sensorRoutes } from './routes/sensorRoutes.js';
-import { fridgeRoutes } from './routes/fridgeRoutes.js';
+import { deviceRoutes } from './routes/deviceRoutes.js';
 import { userRoutes } from './routes/userRoutes.js';
 import { requireAuth } from './middleware/auth.js';
 import { errorHandler, notFound } from './utils.js';
@@ -24,7 +24,7 @@ app.use('/api', requireAuth);
 // Routes
 app.use('/api/temperature', temperatureRoutes);
 app.use('/api/sensors', sensorRoutes);
-app.use('/api/fridges', fridgeRoutes);
+app.use('/api/devices', deviceRoutes);
 app.use('/api/users', userRoutes);
 
 // Error handling

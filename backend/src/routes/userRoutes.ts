@@ -5,7 +5,7 @@ import {
   updateUser,
   deleteUser,
 } from '../controllers/userController.js';
-import { listFridgesForUser } from '../controllers/fridgeController.js';
+import { listDevicesForUser } from '../controllers/deviceController.js';
 
 export const userRoutes = Router();
 
@@ -13,4 +13,4 @@ userRoutes.post('/', createUser);
 userRoutes.get('/:id', getUser);
 userRoutes.put('/:id', updateUser);
 userRoutes.delete('/:id', deleteUser);
-userRoutes.get('/:userId/fridges', listFridgesForUser);
+userRoutes.get('/:userId/devices', listDevicesForUser);

@@ -27,8 +27,8 @@ export interface UserEntity {
   updatedAt: string;
 }
 
-export interface FridgeEntity {
-  fridgeId: string;
+export interface DeviceEntity {
+  deviceId: string;
   userId: string;             // owner
   name: string;
   location: string;
@@ -38,7 +38,7 @@ export interface FridgeEntity {
 
 export interface SensorEntity {
   sensorId: string;           // DS18B20 address (28-xxxx)
-  fridgeId: string;
+  deviceId: string;
   name: string;
   location: string;           // human-readable label
   minThreshold?: number;
@@ -59,6 +59,8 @@ export interface ApiResponse<T> {
 
 export interface LatestSensorResponse {
   sensorId: string;
+  tenantId: string;
+  deviceName: string;
   location: string;
   temp: number;
   time: string;

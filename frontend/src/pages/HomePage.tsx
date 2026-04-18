@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks.js';
 import { fetchSensorData, fetchTemperatureHistory } from '../store/itemsSlice.js';
 import { StatusBar } from '../components/StatusBar.js';
-import { SensorCard } from '../components/SensorCard.js';
+import { DeviceCard } from '../components/DeviceCard.js';
 
 export function HomePage() {
   const dispatch = useAppDispatch();
@@ -18,8 +18,19 @@ export function HomePage() {
     return () => clearInterval(interval);
   }, [dispatch]);
 
-  const total = sensors.length;
-  const online = total;
+  // Group sensors by tenantId (= device)
+  const deviceMap = useMemo(() => {
+    const map = new Map<string, typeof sensors>();
+    for (const s of sensors) {
+      const key = s.tenantId ?? 'unknown';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(s);
+    }
+    return map;
+  }, [sensors]);
+
+  const deviceCount = deviceMap.size;
+  const totalSensors = sensors.length;
 
   return (
     <div className="space-y-6">
@@ -51,22 +62,26 @@ export function HomePage() {
         </div>
       ) : (
         <>
-          <StatusBar total={total} online={online} normal={total} warning={0} critical={0} />
+          <StatusBar total={deviceCount} online={deviceCount} normal={deviceCount} warning={0} critical={0} />
 
           <div className="pt-2">
             <div className="flex items-center gap-2 mb-4">
               <span className="w-1 h-5 bg-gradient-to-b from-cyan-500 dark:from-cyan-400 to-cyan-500/30 dark:to-cyan-400/30 rounded-full" />
               <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                Refrigeration Units
+                Devices
               </h2>
-              <span className="text-xs text-gray-400 dark:text-gray-600 ml-1">({total})</span>
+              <span className="text-xs text-gray-400 dark:text-gray-600 ml-1">({deviceCount})</span>
+              <span className="text-xs text-gray-400 dark:text-gray-600 ml-1">· {totalSensors} sensor{totalSensors !== 1 ? 's' : ''}</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {sensors.map((sensor) => (
-                <SensorCard
-                  key={sensor.sensorId}
-                  sensor={sensor}
-                  history={history.filter((h) => h.sensorId === sensor.sensorId)}
+              {[...deviceMap.entries()].map(([tid, deviceSensors]) => (
+                <DeviceCard
+                  key={tid}
+                  tenantId={tid}
+                  sensors={deviceSensors}
+                  history={history.filter((h) =>
+                    deviceSensors.some((s) => s.sensorId === h.sensorId),
+                  )}
                 />
               ))}
             </div>

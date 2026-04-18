@@ -1,5 +1,7 @@
 export interface SensorReading {
   sensorId: string;
+  tenantId: string;
+  deviceName: string;
   location: string;
   temp: number;
   time: string;

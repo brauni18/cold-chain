@@ -4,6 +4,7 @@ import {
   discoverSensorIds,
   putItem,
   deleteItem,
+  getItem,
   READINGS_TABLE,
 } from '../db/dynamodb.js';
 import {
@@ -11,6 +12,22 @@ import {
   ENTITIES_TABLE,
 } from '../db/dynamodb.js';
 import type { LatestSensorResponse, HistoryPointResponse } from '../types/index.js';
+
+// ── Cache device names to avoid repeated lookups within a request ──
+
+async function resolveDeviceName(tenantId: string, cache: Map<string, string>): Promise<string> {
+  if (cache.has(tenantId)) return cache.get(tenantId)!;
+
+  let name = tenantId; // fallback = hostname
+  try {
+    const item = await getItem(ENTITIES_TABLE, { PK: `DEVICE#${tenantId}`, SK: 'PROFILE' });
+    if (item?.name) name = item.name as string;
+  } catch {
+    // entities table may not exist yet — graceful fallback
+  }
+  cache.set(tenantId, name);
+  return name;
+}
 
 // ── GET /api/temperature/latest ────────────────────────
 
@@ -23,6 +40,7 @@ export const getLatestTemperature = async (_req: Request, res: Response): Promis
 
     // 2. For each sensor, grab the single most-recent reading
     const sensors: LatestSensorResponse[] = [];
+    const deviceNameCache = new Map<string, string>();
 
     await Promise.all(
       sensorIds.map(async (sensorId) => {
@@ -45,10 +63,15 @@ export const getLatestTemperature = async (_req: Request, res: Response): Promis
           // entities table may not exist yet — graceful fallback
         }
 
+        const tenantId = (r.tenantId as string) ?? 'unknown';
+        const deviceName = await resolveDeviceName(tenantId, deviceNameCache);
+
         sensors.push({
           sensorId,
-          location: (r.location as string) ?? location,  // use reading's location, fallback to entity
-          temp: Number(r.celsius ?? r.value),             // support both field names
+          tenantId,
+          deviceName,
+          location: (r.location as string) ?? location,
+          temp: Number(r.celsius ?? r.value),
           time: r.timestamp as string,
           unit: 'Celsius',
         });
